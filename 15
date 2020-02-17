@@ -1,0 +1,104 @@
+#include <STC15F2K60S2.H>
+#include<intrins.h>
+#define uchar unsigned char;
+#define uint unsigned int;
+int aa,bb,cc,dd,ee,ff,gg,hh;
+uchar code tab1[]={0XC0,0XF9,0XA4,0Xb0,0X99,0X92,0X82,0XF8,0X80,0X90};
+uchar code tab2[]={0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
+
+void delayms(int ms);
+void display();
+unsigned char keyscan();
+void init();
+bit flag=0;
+uchar shu,key_value;  
+
+uint shu;
+
+
+void Timer_Init(void)
+{
+	AUXR |= 0x80;	
+	TMOD &= 0xF0;
+	TL0 = 0xCD;		
+	TH0 = 0xD4;		
+	TF0 = 0;		
+	TR0 = 1;		
+	ET0 = 1;
+	EA=1; 
+}
+void timer0() interrupt 1  using 1                   
+{
+	static int smg_count=0,i=0,j=0;
+	smg_count++;
+	
+	if(smg_count==2)			//2ms
+	{
+		smg_count=0;
+		if(flag){P2=0xc0;P0=0;P2=0;				//消影
+		P2=0xe0;P0=tab1[shu];P2=0;}
+else {P2=0xc0;P0=0;P2=0;				//消影
+		P2=0xe0;P0=0xff;P2=0;}
+P2=0xc0;P0=tab2[i];P2=0;
+	
+		
+		i++;
+		if(i==8) {i=0;}
+	}
+
+}
+
+void delayms(int ms)
+{int i,j;
+for(i=ms;i>0;i--)
+for(j=845;j>0;j--);
+}
+
+unsigned char keyscan() 
+{
+ static unsigned char col,key_press;
+
+ P3 = 0xf0; P42 = 1; P44 = 1;
+
+    if((P3!=0xf0)||(P42!=1)||(P44!=1)) 
+        key_press++;
+ else
+  key_press = 0; 
+   
+    if(key_press == 3)
+    {    
+           key_press = 0;       
+          
+
+           if(P44 == 0)   col = 1;
+           if(P42 == 0)   col = 2;
+           if((P3&0x20)==0)     col = 3;
+           if((P3&0x10)==0)     col = 4;
+       
+           P3 = 0x0F; P42 = 0; P44 = 0;
+
+           if((P3&0x01) == 0) key_value = (col);
+           if((P3&0x02) == 0) key_value = (col+4);
+           if((P3&0x04) == 0) key_value = (col+8);
+           if((P3&0x08) == 0) key_value = (col+12);
+
+	}
+return key_value;
+    }
+void main()
+{
+
+	P2=P2&0X1F|0X80;
+	P0=0XFF;
+	P2=P2&0X1F|0XA0;
+	P0=0X00;
+	Timer_Init();	
+	while(1)
+	{
+		shu=keyscan();
+		delayms(1000);
+		flag=~flag;//keyscan();
+	
+	}
+}
+
